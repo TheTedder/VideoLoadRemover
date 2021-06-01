@@ -68,16 +68,22 @@ def load_interface(filename, ref_imgs):
                             width=8, textvariable=_end, takefocus=True)
     end_value.pack(side=LEFT)
 
-    #canvas = Canvas(root, bd=0, highlightthickness=0, width=width, height=height)
+    # canvas = Canvas(root, bd=0, highlightthickness=0, width=width, height=height)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     canvas_img = ImageTk.PhotoImage(Image.fromarray(img))
     drawing = canvas.create_image(0, 0, image=canvas_img, anchor=NW)
     canvas.configure(scrollregion=canvas.bbox(ALL))
     canvas.pack()
 
+    lastVar = IntVar(0)
+
     def slide(var):
+        var = int(var)
+        print(var)
         nonlocal drawing, canvas, canvas_img, img
-        cap.set(cv2.CAP_PROP_POS_FRAMES, slider.get())
+        if lastVar.get() + 1 != var:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, float(var))
+        lastVar.set(var)
         _, img = cap.read()
         if drawing is not None:
             canvas.delete(drawing)
@@ -112,7 +118,7 @@ def load_interface(filename, ref_imgs):
     psnrLabel = ttk.Label(controls_frame, textvariable=canvas.psnrVal)
     canvas.getPSNR()
     psnrLabel.pack(side=LEFT)
-    #psnrButton = ttk.Button(controls_frame, text="Update PSNR", command=getPSNRVal)
+    # psnrButton = ttk.Button(controls_frame, text="Update PSNR", command=getPSNRVal)
     # psnrButton.pack(side=LEFT)
 
     def updatePreview(e=""):
@@ -130,7 +136,7 @@ def load_interface(filename, ref_imgs):
             preview_img_value.configure(image=preview_img, text="")
             preview_img_value.image = preview_img
 
-    #previewButton = ttk.Button(controls_frame, text="Update Preview")
+    # previewButton = ttk.Button(controls_frame, text="Update Preview")
     # previewButton.pack(side=LEFT)
     psnrLabel = Label(controls_frame, text="Enter PSNR Threshold")
     psnrLabel.pack(side=TOP)
@@ -173,7 +179,7 @@ def load_interface(filename, ref_imgs):
         root, text="Selected Region comparison will go here once created")
     preview_img_value.pack(side=LEFT)
 
-    #previewButton.bind("<Button-1>", updatePreview)
+    # previewButton.bind("<Button-1>", updatePreview)
     canvas.bind("<Motion>", updatePreview)
 
     root.mainloop()

@@ -1,19 +1,14 @@
-from collections import deque
 import multiprocessing as mp
 import datetime
 import time
-from multiprocessing.pool import ThreadPool
-import threading
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
-import threading
 import zoneselector
 import cv2
-import PIL.Image
-import PIL.ImageTk
 import os
-from tqdm.tk import trange, tqdm
+from tqdm.tk import tqdm
+from skimage.metrics import structural_similarity as ssim
 
 # Returns filepath string of the video selected by user
 
@@ -82,14 +77,22 @@ def process_video_multiprocessing(group_number_list):
     try:
         while proc_frames < frame_jump_unit:
             ret, frame = cap.read()
-            if not ret:
+            if not ret or frame is None:
                 break
             temp = frame[y1:y2, x1:x2]
             resized = cv2.resize(
                 temp, (ref_imgs[0].shape[1], ref_imgs[0].shape[0]))
+
             # c1 = cv2.PSNR(ref_img, resized)
-            if any([cv2.PSNR(ref_img, resized) >= threshold for ref_img in ref_imgs]):
-                load_frames += 1
+            # if any([cv2.PSNR(ref_img, resized) >= threshold for ref_img in ref_imgs]):
+            for ref_img in ref_imgs:
+                grayImg = cv2.cvtColor(ref_img, cv2.COLOR_BGR2GRAY)
+                grayImg2 = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+                (value, _) = ssim(grayImg, grayImg2, full=TRUE)
+                if value >= threshold:
+                    load_frames += 1
+                    break
+
             proc_frames += 1
             if group_number == 0:
                 pbarVal.update(1)
@@ -127,12 +130,16 @@ def multi_process():
     elapsed_time_label.pack()
     print("FPS : {}".format(videoCount / total_processing_time))
     rta = datetime.timedelta(seconds=videoCount / fps)
-    rta_label = Label(root, text="RTA: {}".format(rta))
-    rta_label.pack()
+    rta_text = Text(root, borderwidth=0, height=1)
+    rta_text.insert(END, "RTA: {}".format(rta))
+    rta_text.pack()
+    rta_text.configure(state=DISABLED)
 
     igt = rta - datetime.timedelta(seconds=total_load_frames/fps)
-    igt_label = Label(root, text="Loadless: {}".format(igt))
-    igt_label.pack()
+    igt_text = Text(root, borderwidth=0, height=1)
+    igt_text.insert(END, "Loadless: {}".format(igt))
+    igt_text.pack()
+    igt_text.configure(state=DISABLED)
     root.mainloop()
 
 

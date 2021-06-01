@@ -1,8 +1,6 @@
 from tkinter import *
-from tkinter import ttk
 import cv2
-import PIL.Image
-import PIL.ImageTk
+from skimage.metrics import structural_similarity as ssim
 
 
 def clip(bottom, value, top):
@@ -88,15 +86,22 @@ class DrawableRectangle(Canvas):
         if(abs(_x2-_x1) != 0 and abs(_y2-_y1) != 0):
             tempImg = self.img[_y1:_y2, _x1:_x2]
             resized = cv2.resize(
-                # TODO: Verify that each reference image is the same size --Ted
                 tempImg, (self.references[0].shape[1], self.references[0].shape[0]))
+            #self.psnrVal.set(cv2.PSNR(self.reference, resized))
+            # grayImg = cv2.cvtColor(self.reference, cv2.COLOR_BGR2GRAY)
+            # grayImg2 = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+            # (score, diff) = ssim(grayImg, grayImg2, full=TRUE)
+            # self.psnrVal.set(score)
 
+            # TODO: Verify that each reference image is the same size --Ted
             max_value = -1
             for i in range(len(self.references)):
-                value = cv2.PSNR(self.references[i], resized)
+                grayImg = cv2.cvtColor(self.references[i], cv2.COLOR_BGR2GRAY)
+                grayImg2 = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+                (value, _) = ssim(grayImg, grayImg2, full=TRUE)
                 if value > max_value:
                     max_value = value
                     self.which = i
 
             self.psnrVal.set(max_value)
-            return self.psnrVal.get()
+            return max_value
